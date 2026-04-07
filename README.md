@@ -1,7 +1,13 @@
 ---
+title: OpenEnv Support Ticket RL Environment
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_file: inference.py
 license: mit
 library_name: openenv
-language: python
+language: en
 tags:
   - reinforcement-learning
   - openenv
