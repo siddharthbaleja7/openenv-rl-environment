@@ -102,4 +102,4 @@ def test_fraud_detection_task():
     action4 = Action(action_type="close_ticket", parameters={"resolution": "Refund denied due to chargebacks."})
     obs4, reward4, done4, info4 = env.step(action4)
     assert done4 is True
-    assert info4.get("current_reward", -1.0) == 0.0
+    assert info4.get("current_reward", -1.0) == 0.01

@@ -162,7 +162,7 @@ async def run_task(task_id: str, client: OpenAI) -> None:
                 score = actual_reward
                 break
                 
-        score = min(max(score, 0.0), 1.0)
+        score = min(max(score, 0.01), 0.99)
         success = score >= SUCCESS_SCORE_THRESHOLD
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)

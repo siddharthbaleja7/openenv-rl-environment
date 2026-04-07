@@ -13,7 +13,7 @@ def grade_easy(state: EnvironmentState) -> float:
 
     if "escalate" in actions:
         reward -= 0.5 # penalty for unnecessary escalation
-    return max(0.0, min(1.0, reward))
+    return max(0.01, min(0.99, reward))
 
 def grade_medium(state: EnvironmentState) -> float:
     # Requires: check_policy, reply_to_customer (explaining policy), close_ticket
@@ -28,10 +28,10 @@ def grade_medium(state: EnvironmentState) -> float:
     if "close_ticket" in actions:
         reward += 0.3
         
-    if "issue_refund" in actions: # fatal mistake
-        return 0.0
+    if "issue_refund" in actions:
+        return 0.01
         
-    return max(0.0, min(1.0, reward))
+    return max(0.01, min(0.99, reward))
 
 def grade_hard(state: EnvironmentState) -> float:
     # Requires: fetch_user_data, escalate to "billing_tier2", reply_to_customer
@@ -57,7 +57,7 @@ def grade_hard(state: EnvironmentState) -> float:
     if "close_ticket" in actions:
         reward -= 0.3 # can't close without resolving escalate
         
-    return max(0.0, min(1.0, reward))
+    return max(0.01, min(0.99, reward))
 
 def grade_fraud_detection(state: EnvironmentState) -> float:
     # Requires: fetch_user_data, check_policy, deny refund, close_ticket
@@ -77,9 +77,9 @@ def grade_fraud_detection(state: EnvironmentState) -> float:
         print("Reward after close_ticket:", reward)
 
     if "issue_refund" in actions:  # fatal mistake
-        return 0.0
+        return 0.01
 
-    return max(0.0, min(1.0, reward))
+    return max(0.01, min(0.99, reward))
 
 def grade(state: EnvironmentState) -> float:
     if state.current_task_id == "task_fraud_detection":
@@ -90,4 +90,4 @@ def grade(state: EnvironmentState) -> float:
         return grade_medium(state)
     elif state.task_difficulty == "hard":
         return grade_hard(state)
-    return 0.0
+    return 0.01
