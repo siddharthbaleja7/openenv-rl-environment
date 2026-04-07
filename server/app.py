@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from env.environment import SupportTicketEnv
 from env.models import Action
-from typing import Dict
+from typing import Dict, Optional
 from uuid import uuid4
 
 app = FastAPI(title="OpenEnv Support Ticket API")
@@ -24,7 +24,9 @@ def read_root():
     return {"status": "ok", "message": "Support Ticket OpenEnv is live."}
 
 @app.post("/reset")
-def reset_env(req: InitRequest):
+def reset_env(req: Optional[InitRequest] = None):
+    if req is None:
+        req = InitRequest()
     try:
         env = SupportTicketEnv(task_id=req.task_id)
         obs = env.reset()
