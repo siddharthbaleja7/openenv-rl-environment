@@ -7,19 +7,56 @@ The **Support Ticket Environment** aims to test Large Language Models (LLMs) and
 
 ## 2. Real-World Utility
 Most AI evaluations focus on static benchmarks (MMLU) or gamified environments (Minecraft). However, the most immediate commercial application of agentic AI is customer support automation. 
-* **The Problem**: Companies lose millions to unchecked LLM agents hallucinating policies, issuing improper refunds, or frustrating high-tier enterprise clients.
-* **The Solution**: This environment models the actual complexity of a ticketing system. It enforces that agents must securely verify `UserData`, correctly attribute `IssueType` to a `Policy`, and avoid taking destructive actions (like rejecting an enterprise client abruptly) under pressure or when faced with confusing queries.
+
+### The Problem
+Companies lose millions to unchecked LLM agents hallucinating policies, issuing improper refunds, or frustrating high-tier enterprise clients.
+
+### The Solution
+This environment models the actual complexity of a ticketing system. It enforces that agents must securely verify `UserData`, correctly attribute `IssueType` to a `Policy`, and avoid taking destructive actions (like rejecting an enterprise client abruptly) under pressure or when faced with confusing queries.
 
 ## 3. Environment Architecture
-- **State Boundaries**: Each task begins with a newly opened ticket. The episode terminates either when the agent explicitly uses a terminal action (`close_ticket`, `escalate`) or after reaching the hard threshold of $N=10$ steps.
-- **Action Constraints**: Intermediate actions (`fetch_user_data`, `check_policy`) do not alter the external ticket state but provide critical context. Terminal actions irreversibly mutate the state and trigger evaluation.
-- **Grading and Reward Shaping**: 
-   - Graders are strictly deterministic.
-   - Fractional rewards are yielded for necessary intermediate contextualization steps (promoting chain-of-thought grounding).
-   - Sharp penalties are applied for protocol violations (e.g., escalating a simple refund directly to billing Tier 2).
+
+### State Boundaries
+- Each task begins with a newly opened ticket.
+- The episode terminates either when the agent explicitly uses a terminal action (`close_ticket`, `escalate`) or after reaching the hard threshold of $N=10$ steps.
+
+### Action Constraints
+- Intermediate actions (`fetch_user_data`, `check_policy`) do not alter the external ticket state but provide critical context.
+- Terminal actions irreversibly mutate the state and trigger evaluation.
+
+### Grading and Reward Shaping
+- Graders are strictly deterministic.
+- Fractional rewards are yielded for necessary intermediate contextualization steps (promoting chain-of-thought grounding).
+- Sharp penalties are applied for protocol violations (e.g., escalating a simple refund directly to billing Tier 2).
 
 ## 4. Required Agent Capabilities
 To succeed on hard tasks, an agent must demonstrate:
 - **State Management**: Remembering the constraints of the `policy` retrieved earlier in the episode.
 - **Self-Correction**: Adapting if `fetch_user_data` returns constraints (e.g., the user is not a premium member).
 - **Nuanced Execution**: Apologizing organically when generating the `reply_to_customer` response during a high-stakes failure ticket.
+
+## 5. Evaluation Criteria
+
+### Core Metrics
+- **Task Completion Rate**: Fraction of tasks completed successfully.
+- **Protocol Adherence**: Fraction of steps that align with the defined policy.
+- **Efficiency**: Average number of steps taken to complete a task.
+
+### Grader Outputs
+Grader outputs are JSON objects with the following fields:
+```json
+{
+  "task_id": "task_hard_1",
+  "score": 0.8,
+  "violations": ["policy_violation", "premature_closure"]
+}
+```
+
+### Constraints
+- Agents must not exceed the step limit.
+- Agents must avoid terminal actions unless confident of the resolution.
+
+## 6. Future Extensions
+- **Multi-Agent Collaboration**: Introduce scenarios where multiple agents must collaborate to resolve a ticket.
+- **Dynamic Policies**: Add tasks where policies change mid-episode, requiring agents to adapt.
+- **Realistic User Simulation**: Enhance the environment with stochastic user behavior to test robustness.

@@ -1,11 +1,56 @@
+---
+license: mit
+library_name: openenv
+language: python
+tags:
+  - reinforcement-learning
+  - openenv
+  - hackathon
+  - customer-support
+---
+
 # OpenEnv: Support Ticket Resolution System
 
 An OpenEnv standards-compliant simulated customer support environment. The agent takes the role of a support professional and resolves tickets using realistic multi-step processes such as verifying users, checking policies, and issuing actions (refunds, escalations, replies).
 
 ## Motivation & Real-world Relevance
+Most AI evaluations involve games or static code benchmarks. This environment measures how accurately an agent can navigate a realistic business process, following internal company logic before issuing potentially destructive operations (e.g., refunds or enterprise escalations). It rewards adherence to protocol (partial rewards for checking policy) and penalizes hasty or contradictory actions.
+
 *Please see our detailed [Product Requirements Document (PRD.md)](./PRD.md) for full breakdown.*
 
-Most AI evaluations involve games or static code benchmarks. This environment measures how accurately an agent can navigate a realistic business process, following internal company logic before issuing potentially destructive operations (e.g., refunds or enterprise escalations). It rewards adherence to protocol (partial rewards for checking policy) and penalizes hasty or contradictory actions.
+## Quick Demo
+
+Run the environment and evaluate the agent:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+pip install -e .
+
+# Run the evaluation harness
+python evaluate.py
+```
+
+Example output:
+```json
+{
+  "task_easy_1": 1.0,
+  "task_medium_1": 0.8,
+  "task_hard_1": 0.6
+}
+```
+
+## Architecture
+
+### Components
+- **Environment**: Implements the OpenEnv interface, defining tasks, actions, and rewards.
+- **Agent**: Interacts with the environment, making decisions based on observations.
+- **Evaluation**: A lightweight harness that runs canonical action sequences and computes grader scores.
+
+### Workflow
+1. **Reset**: Initialize the environment with a new task.
+2. **Step**: Agent takes actions, receives rewards, and observes the next state.
+3. **Evaluate**: Graders compute scores based on task completion and adherence to protocol.
 
 ## Tasks
 * **Easy (`task_easy_1`)**: Straightforward accidental purchase refund. Agent simply checks policy, refunds, and closes.

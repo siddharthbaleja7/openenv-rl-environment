@@ -59,7 +59,31 @@ def grade_hard(state: EnvironmentState) -> float:
         
     return max(0.0, min(1.0, reward))
 
+def grade_fraud_detection(state: EnvironmentState) -> float:
+    # Requires: fetch_user_data, check_policy, deny refund, close_ticket
+    reward = 0.0
+    actions = [a.action_type for a in state.action_history]
+
+    print(f"Actions received for grading: {actions}")
+
+    if "fetch_user_data" in actions:
+        reward += 0.3  # Increased reward for fetching user data
+        print("Reward after fetch_user_data:", reward)
+    if "check_policy" in actions:
+        reward += 0.4  # Increased reward for checking policy
+        print("Reward after check_policy:", reward)
+    if "close_ticket" in actions:
+        reward += 0.5  # Reward for closing the ticket correctly
+        print("Reward after close_ticket:", reward)
+
+    if "issue_refund" in actions:  # fatal mistake
+        return 0.0
+
+    return max(0.0, min(1.0, reward))
+
 def grade(state: EnvironmentState) -> float:
+    if state.current_task_id == "task_fraud_detection":
+        return grade_fraud_detection(state)
     if state.task_difficulty == "easy":
         return grade_easy(state)
     elif state.task_difficulty == "medium":

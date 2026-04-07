@@ -77,3 +77,29 @@ def test_hard_flow_requirements():
     # reply should be present in history or tool_output
     assert done is True
     assert info.get("current_reward", 0.0) >= 0.0
+
+
+def test_fraud_detection_task():
+    env = SupportTicketEnv(task_id="task_fraud_detection")
+    env.reset()
+
+    # Fetch user data
+    action1 = Action(action_type="fetch_user_data", parameters={"user_id": "USR-C3"})
+    obs1, reward1, done1, info1 = env.step(action1)
+    assert "Chargebacks = 3" in (obs1.tool_output or "")
+
+    # Check policy
+    action2 = Action(action_type="check_policy", parameters={"issue_type": "refund_request"})
+    obs2, reward2, done2, info2 = env.step(action2)
+    assert "High-value refunds require no history of chargebacks" in (obs2.tool_output or "")
+
+    # Attempt refund (should fail)
+    action3 = Action(action_type="issue_refund", parameters={"amount": 500})
+    obs3, reward3, done3, info3 = env.step(action3)
+    assert "Refund denied due to chargeback history." in (obs3.tool_output or "")
+
+    # Close ticket
+    action4 = Action(action_type="close_ticket", parameters={"resolution": "Refund denied due to chargebacks."})
+    obs4, reward4, done4, info4 = env.step(action4)
+    assert done4 is True
+    assert info4.get("current_reward", 0.0) > 0.0

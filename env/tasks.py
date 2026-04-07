@@ -62,5 +62,25 @@ TASKS = {
         "policy": {
             "billing_discrepancy": "For enterprise clients with recurring double charges, fetch user data, escalate immediately to billing_tier2, and reply to customer apologizing for the delay."
         }
+    },
+    "task_fraud_detection": {
+        "difficulty": Difficulty.HARD.value,
+        "ticket": {
+            "ticket_id": "TKT-4004",
+            "user_id": "USR-C3",
+            "issue_type": "refund_request",
+            "subject": "Refund for high-value transaction",
+            "body": "I was charged $500 for a service I didn’t use. Please refund immediately.",
+            "status": "open"
+        },
+        "user_data": {
+            "user_id": "USR-C3",
+            "account_tier": "standard",
+            "join_date": "2020-11-11",
+            "chargeback_history": 3
+        },
+        "policy": {
+            "refund_request": "High-value refunds require no history of chargebacks. Reject politely if chargebacks exist."
+        }
     }
 }

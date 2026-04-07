@@ -58,7 +58,8 @@ class SupportTicketEnv:
             if user_id == self.state.ticket.user_id:
                 user_data = cast(Dict[str, Any], self.task_data["user_data"])
                 self.state.user_data = UserData(**user_data)
-                tool_output = f"User Data: Tier = {self.state.user_data.account_tier}, Joined = {self.state.user_data.join_date}"
+                chargeback_info = f", Chargebacks = {self.state.user_data.chargeback_history}" if hasattr(self.state.user_data, "chargeback_history") else ""
+                tool_output = f"User Data: Tier = {self.state.user_data.account_tier}, Joined = {self.state.user_data.join_date}{chargeback_info}"
             else:
                 tool_output = "Error: Invalid user_id."
                 system_message = "Failed to fetch user data."
@@ -70,8 +71,12 @@ class SupportTicketEnv:
             tool_output = f"Policy for {issue_type}: {policy}"
             
         elif action.action_type == "issue_refund":
-            amount = action.parameters.get("amount", "fully")
-            tool_output = f"Refund issued for {amount}."
+            if self.state.user_data and self.state.user_data.chargeback_history > 0:
+                tool_output = "Refund denied due to chargeback history."
+                system_message = "Refund action blocked."
+            else:
+                amount = action.parameters.get("amount", "fully")
+                tool_output = f"Refund issued for {amount}."
             
         elif action.action_type == "reply_to_customer":
             msg = action.parameters.get("message", "")
@@ -99,15 +104,21 @@ class SupportTicketEnv:
             system_message = "Max steps reached."
             
         # Calculate intermediate/final reward
-        reward = 0.0
         if self.state.is_done:
-            reward = grade(self.state)
-            self.state.final_reward = reward
-            
+            self.state.final_reward += grade(self.state)  # Add final reward
+            reward = self.state.final_reward
+            print(f"Final reward calculated: {reward}")
+        else:
+            intermediate_reward = grade(self.state)  # Add intermediate reward dynamically
+            self.state.final_reward += intermediate_reward
+            reward = self.state.final_reward
+
         info = {
             "current_reward": reward,
             "step_count": self.state.step_count
         }
+        
+        print(f"Updated info dictionary: {info}")
         
         return self._get_observation(system_message, tool_output), reward, self.state.is_done, info
 

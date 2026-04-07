@@ -13,6 +13,7 @@ class UserData(BaseModel):
     user_id: str
     account_tier: str
     join_date: str
+    chargeback_history: Optional[int] = 0
 
 class Action(BaseModel):
     action_type: Literal["fetch_user_data", "check_policy", "issue_refund", "reply_to_customer", "escalate", "close_ticket"]
