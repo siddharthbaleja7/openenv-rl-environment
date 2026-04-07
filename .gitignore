@@ -1,0 +1,18 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Python caching
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment Variables
+.env
+
+# MacOS
+.DS_Store
+
+# Tool outputs (uv)
+uv.lock

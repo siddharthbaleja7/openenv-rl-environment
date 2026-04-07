@@ -1,0 +1,29 @@
+name: "SupportTicketEnv"
+version: "1.0.0"
+description: >
+  A real-world OpenEnv environment simulating a customer support ticketing system.
+  The agent must process open tickets by optionally fetching user data, checking internal policies,
+  and taking terminal actions like issuing a refund, replying, escalating, or closing the ticket.
+action_space:
+  type: "dict"
+  schema: |
+    {
+      "action_type": "[fetch_user_data, check_policy, issue_refund, reply_to_customer, escalate, close_ticket]",
+      "parameters": {"param_name": "param_value"}
+    }
+observation_space:
+  type: "dict"
+  schema: |
+    {
+      "ticket": {"TicketInfo object"},
+      "available_actions": ["list of strings"],
+      "system_message": "string",
+      "history": ["List of strings of past actions"],
+      "tool_output": "Optional string of the latest action output",
+      "step_count": "integer"
+    }
+reward_description: >
+  The reward is between 0.0 and 1.0. Partial credit is given for taking correct 
+  intermediate steps (like checking policy before acting or fetching user data).
+  Penalties are applied for taking contradictory or destructive actions 
+  (e.g., escalating unnecessarily, issuing refunds against policy).

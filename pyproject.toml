@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "support-ticket-env"
+version = "1.0.0"
+description = "A real-world OpenEnv environment simulating a customer support ticketing system."
+readme = "README.md"
+dependencies = [
+    "pydantic>=2.0",
+    "openenv-core>=0.2.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
