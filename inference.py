@@ -23,11 +23,14 @@ def log_start(task: str, env: str, model: str):
     print(f"[START] task={task} env={env} model={model}", flush=True)
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str] = None):
-    err_str = f" error={error}" if error else ""
-    print(f"[STEP] step={step} action={action!r} reward={reward} done={done}{err_str}", flush=True)
+    error_val = error if error else "null"
+    done_val = str(done).lower()
+    print(f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
 
 def log_end(success: bool, steps: int, score: float, rewards: list):
-    print(f"[END] success={success} steps={steps} score={score} rewards={rewards}", flush=True)
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    success_val = str(success).lower()
+    print(f"[END] success={success_val} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
 
 def parse_action(text: str) -> Action:
     # Robustly extract the first JSON object from text and validate with Pydantic
@@ -47,7 +50,8 @@ def parse_action(text: str) -> Action:
                         logger.warning("Action validation failed: %s", val_err)
                         # Fallback to manual construction with validation
                         action_type = obj.get("action_type", "close_ticket")
-                        if action_type not in Action.__fields__["action_type"].type.__args__:
+                        valid_actions = ["fetch_user_data", "check_policy", "issue_refund", "reply_to_customer", "escalate", "close_ticket"]
+                        if action_type not in valid_actions:
                             logger.error("Invalid action_type: %s. Defaulting to 'close_ticket'.", action_type)
                             action_type = "close_ticket"
                         return Action(action_type=action_type, parameters=obj.get("parameters", {}))
@@ -164,7 +168,7 @@ async def run_task(task_id: str, client: OpenAI) -> None:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 async def main() -> None:
-    api_key = os.getenv("OPENAI_API_KEY", "dummy-key")
+    api_key = os.getenv("HF_TOKEN")
     client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
     
     tasks = ["task_easy_1", "task_medium_1", "task_hard_1"]

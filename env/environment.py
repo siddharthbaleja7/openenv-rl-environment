@@ -104,17 +104,16 @@ class SupportTicketEnv:
             system_message = "Max steps reached."
             
         # Calculate intermediate/final reward
+        new_total_reward = grade(self.state)
+        step_reward = new_total_reward - self.state.final_reward
+        self.state.final_reward = new_total_reward
+        reward = step_reward
+        
         if self.state.is_done:
-            self.state.final_reward += grade(self.state)  # Add final reward
-            reward = self.state.final_reward
-            print(f"Final reward calculated: {reward}")
-        else:
-            intermediate_reward = grade(self.state)  # Add intermediate reward dynamically
-            self.state.final_reward += intermediate_reward
-            reward = self.state.final_reward
+            print(f"Final reward calculated: {self.state.final_reward}")
 
         info = {
-            "current_reward": reward,
+            "current_reward": self.state.final_reward,
             "step_count": self.state.step_count
         }
         

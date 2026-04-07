@@ -19,8 +19,8 @@ EXPECTED_ACTIONS = {
     ],
     "task_hard_1": [
         Action(action_type="fetch_user_data", parameters={"user_id": "USR-C3"}),
-        Action(action_type="escalate", parameters={"reason": "billing_tier2"}),
         Action(action_type="reply_to_customer", parameters={"message": "We're escalating this to billing tier 2 and will follow up."}),
+        Action(action_type="escalate", parameters={"reason": "billing_tier2"}),
     ],
 }
 

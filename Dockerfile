@@ -2,11 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies directly to be lightweight
-RUN pip install --no-cache-dir pydantic openai fastapi uvicorn
-
 # Copy project files
 COPY . .
+
+# Install dependencies directly to be lightweight
+RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir .
 
 # Set default env vars
 ENV PYTHONUNBUFFERED=1
