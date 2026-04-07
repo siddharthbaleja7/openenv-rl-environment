@@ -45,16 +45,18 @@ def parse_action(text: str) -> Action:
                         return Action.model_validate(obj)
                     except Exception as val_err:
                         logger.warning("Action validation failed: %s", val_err)
-                        # fallback to manual construction
-                        return Action(action_type=obj.get("action_type", "close_ticket"), parameters=obj.get("parameters", {}))
+                        # Fallback to manual construction with validation
+                        action_type = obj.get("action_type", "close_ticket")
+                        if action_type not in Action.__fields__["action_type"].type.__args__:
+                            logger.error("Invalid action_type: %s. Defaulting to 'close_ticket'.", action_type)
+                            action_type = "close_ticket"
+                        return Action(action_type=action_type, parameters=obj.get("parameters", {}))
             except json.JSONDecodeError:
                 idx += 1
-                continue
-    except Exception as exc:
-        logger.exception("Unexpected error while parsing action: %s", exc)
-
-    # Safe default when parsing/validation fails
-    return Action(action_type="close_ticket", parameters={"resolution": "invalid_parse"})
+    except Exception as e:
+        logger.error("Failed to parse action: %s", e)
+    # Default fallback if no valid action is found
+    return Action(action_type="close_ticket", parameters={})
 
 def get_model_message(client, step: int, env_state: str, history: List[str]) -> str:
     system_prompt = (
