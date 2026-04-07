@@ -71,7 +71,7 @@ class SupportTicketEnv:
             tool_output = f"Policy for {issue_type}: {policy}"
             
         elif action.action_type == "issue_refund":
-            if self.state.user_data and self.state.user_data.chargeback_history > 0:
+            if self.state.user_data and self.state.user_data.chargeback_history is not None and self.state.user_data.chargeback_history > 0:
                 tool_output = "Refund denied due to chargeback history."
                 system_message = "Refund action blocked."
             else:
