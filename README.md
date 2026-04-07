@@ -39,3 +39,32 @@ export OPENAI_API_KEY="your-key"
 export MODEL_NAME="gpt-4o"
 python inference.py
 ```
+
+Evaluation harness
+------------------
+To reproduce grader outputs for Round 1, run the lightweight evaluator which executes the canonical correct action sequences:
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+python evaluate.py
+```
+
+Packaging notes
+---------------
+This project includes `env/` as the package containing the OpenEnv environment. We include `openenv.yaml` and `PRD.md` in the source distribution to ensure validator and reviewers can find metadata.
+
+Developer setup (recommended)
+-----------------------------
+For reviewers or contributors, it's helpful to install the package in editable mode so imports resolve and tests run without extra environment variables:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+This ensures `pytest` and local imports work out-of-the-box.
+

@@ -1,10 +1,14 @@
 import os
 import json
+import logging
 import asyncio
 from typing import List, Optional
 from openai import OpenAI
 from env.environment import SupportTicketEnv
 from env.models import Action
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -26,19 +30,31 @@ def log_end(success: bool, steps: int, score: float, rewards: list):
     print(f"[END] success={success} steps={steps} score={score} rewards={rewards}", flush=True)
 
 def parse_action(text: str) -> Action:
+    # Robustly extract the first JSON object from text and validate with Pydantic
     try:
-        start_idx = text.find('{')
-        end_idx = text.rfind('}') + 1
-        if start_idx != -1 and end_idx != -1:
-            json_str = text[start_idx:end_idx]
-            data = json.loads(json_str)
-            return Action(
-                action_type=data.get("action_type", "close_ticket"),
-                parameters=data.get("parameters", {})
-            )
-    except Exception:
-        pass
-    return Action(action_type="close_ticket", parameters={"resolution": "invalid"})
+        decoder = json.JSONDecoder()
+        idx = 0
+        while True:
+            idx = text.find('{', idx)
+            if idx == -1:
+                break
+            try:
+                obj, end = decoder.raw_decode(text, idx)
+                if isinstance(obj, dict):
+                    try:
+                        return Action.model_validate(obj)
+                    except Exception as val_err:
+                        logger.warning("Action validation failed: %s", val_err)
+                        # fallback to manual construction
+                        return Action(action_type=obj.get("action_type", "close_ticket"), parameters=obj.get("parameters", {}))
+            except json.JSONDecodeError:
+                idx += 1
+                continue
+    except Exception as exc:
+        logger.exception("Unexpected error while parsing action: %s", exc)
+
+    # Safe default when parsing/validation fails
+    return Action(action_type="close_ticket", parameters={"resolution": "invalid_parse"})
 
 def get_model_message(client, step: int, env_state: str, history: List[str]) -> str:
     system_prompt = (
@@ -56,20 +72,52 @@ def get_model_message(client, step: int, env_state: str, history: List[str]) -> 
     history_str = "\n".join(history)
     user_prompt = f"History:\n{history_str}\n\nCurrent Observation:\n{env_state}\n\nWhat is your next action JSON?"
     
+    import time
+    # retry/backoff parameters
+    max_retries = 3
+    backoff_base = 0.5
+
     try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.1
-        )
-        text = (completion.choices[0].message.content or "").strip()
-        return text if text else "{}"
+        # Support a few possible client interfaces (chat.completions or responses)
+        for attempt in range(1, max_retries + 1):
+            try:
+                if hasattr(client, "chat") and hasattr(client.chat, "completions"):
+                    completion = client.chat.completions.create(
+                        model=MODEL_NAME,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.1
+                    )
+                    text = (completion.choices[0].message.content or "").strip()
+                    return text if text else "{}"
+
+                if hasattr(client, "responses") and hasattr(client.responses, "create"):
+                    completion = client.responses.create(model=MODEL_NAME, input=user_prompt, temperature=0.1)
+                    text = getattr(completion, "output_text", None)
+                    if text:
+                        return text.strip()
+
+                    out = []
+                    for item in getattr(completion, "output", []) or []:
+                        for c in item.get("content", []):
+                            if c.get("type") == "output_text":
+                                out.append(c.get("text", ""))
+                    if out:
+                        return "".join(out).strip()
+
+                raise RuntimeError("No supported model client method available")
+            except Exception as exc:
+                logger.warning("Model request attempt %d failed: %s", attempt, exc)
+                if attempt == max_retries:
+                    break
+                sleep_time = backoff_base * (2 ** (attempt - 1))
+                time.sleep(sleep_time)
     except Exception as exc:
-        print(f"[DEBUG] Model request failed: {exc}", flush=True)
-        return "{}"
+        logger.exception("Unexpected error in get_model_message: %s", exc)
+
+    return "{}"
 
 async def run_task(task_id: str, client: OpenAI) -> None:
     env = SupportTicketEnv(task_id=task_id)
