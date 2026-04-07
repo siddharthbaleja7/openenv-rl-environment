@@ -19,3 +19,6 @@ server = "server.app:main"
 dev = [
     "pytest",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["env"]
