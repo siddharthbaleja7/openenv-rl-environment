@@ -131,10 +131,9 @@ async def run_task(task_id: str, client: OpenAI) -> None:
     try:
         obs = env.reset()
         last_echoed = obs.model_dump_json(indent=2)
-        last_reward = 0.0
         
         for step in range(1, MAX_STEPS + 1):
-            if env.state.is_done:
+            if env.get_state().is_done:
                 break
                 
             message = get_model_message(client, step, last_echoed, history)
@@ -149,7 +148,6 @@ async def run_task(task_id: str, client: OpenAI) -> None:
             rewards.append(actual_reward)
             steps_taken = step
             last_echoed = obs_json
-            last_reward = actual_reward
             
             log_step(step=step, action=message, reward=actual_reward, done=done, error=error)
             history.append(f"Step {step}: {message!r} -> reward {actual_reward:+.2f}")

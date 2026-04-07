@@ -15,4 +15,4 @@ __pycache__/
 .DS_Store
 
 # Tool outputs (uv)
-uv.lock
+# uv.lock should be committed for OpenEnv validation; do not ignore it

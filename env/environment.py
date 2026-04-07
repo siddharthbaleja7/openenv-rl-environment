@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any, Optional, cast
 from .models import Action, Observation, EnvironmentState, TicketInfo, UserData
 from .tasks import TASKS
 from .graders import grade
@@ -9,12 +9,12 @@ class SupportTicketEnv:
         if task_id not in TASKS:
             raise ValueError(f"Unknown task_id: {task_id}")
         self.task_data = TASKS[task_id]
-        self.state = None
+        self.state: Optional[EnvironmentState] = None
         self.max_steps = 10
         self.reset()
         
     def reset(self) -> Observation:
-        ticket_data = self.task_data["ticket"]
+        ticket_data = cast(Dict[str, Any], self.task_data["ticket"])
         self.state = EnvironmentState(
             current_task_id=self.task_id,
             step_count=0,
@@ -22,11 +22,12 @@ class SupportTicketEnv:
             action_history=[],
             is_done=False,
             final_reward=0.0,
-            task_difficulty=self.task_data["difficulty"]
+            task_difficulty=str(self.task_data["difficulty"])
         )
         return self._get_observation("System initialized. Ticket assigned.")
         
     def _get_observation(self, system_message: str, tool_output: Optional[str] = None) -> Observation:
+        assert self.state is not None
         return Observation(
             ticket=self.state.ticket,
             available_actions=[
@@ -40,6 +41,8 @@ class SupportTicketEnv:
         )
         
     def step(self, action: Action) -> Tuple[Observation, float, bool, Dict[str, Any]]:
+        assert self.state is not None
+
         if self.state.is_done:
             return self._get_observation("Episode is over."), 0.0, True, {}
             
@@ -53,7 +56,8 @@ class SupportTicketEnv:
         if action.action_type == "fetch_user_data":
             user_id = action.parameters.get("user_id")
             if user_id == self.state.ticket.user_id:
-                self.state.user_data = UserData(**self.task_data["user_data"])
+                user_data = cast(Dict[str, Any], self.task_data["user_data"])
+                self.state.user_data = UserData(**user_data)
                 tool_output = f"User Data: Tier = {self.state.user_data.account_tier}, Joined = {self.state.user_data.join_date}"
             else:
                 tool_output = "Error: Invalid user_id."
@@ -61,7 +65,8 @@ class SupportTicketEnv:
                 
         elif action.action_type == "check_policy":
             issue_type = action.parameters.get("issue_type", self.state.ticket.issue_type)
-            policy = self.task_data["policy"].get(issue_type, "No specific policy found.")
+            policy_map = cast(Dict[str, str], self.task_data["policy"])
+            policy = policy_map.get(issue_type, "No specific policy found.")
             tool_output = f"Policy for {issue_type}: {policy}"
             
         elif action.action_type == "issue_refund":
@@ -107,4 +112,5 @@ class SupportTicketEnv:
         return self._get_observation(system_message, tool_output), reward, self.state.is_done, info
 
     def get_state(self) -> EnvironmentState:
+        assert self.state is not None
         return self.state

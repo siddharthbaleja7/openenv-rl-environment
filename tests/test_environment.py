@@ -1,5 +1,3 @@
-import pytest
-
 from env.environment import SupportTicketEnv
 from env.models import Action
 
