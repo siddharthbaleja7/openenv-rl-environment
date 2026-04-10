@@ -5,6 +5,43 @@ class Difficulty(Enum):
     MEDIUM = "medium"
     HARD = "hard"
 
+
+# Difficulty notes used by docs and validator tooling.
+TASK_DIFFICULTY_NOTES = {
+    "task_easy_1": {
+        "difficulty": Difficulty.EASY.value,
+        "why_harder_than_previous": "Baseline task. No prerequisite task.",
+        "state_space_notes": "Single refund intent with low ambiguity.",
+        "typical_horizon": 3,
+        "stochasticity": "Low",
+        "expected_optimal_score": 0.99,
+    },
+    "task_medium_1": {
+        "difficulty": Difficulty.MEDIUM.value,
+        "why_harder_than_previous": "Requires rejecting a tempting but policy-violating refund.",
+        "state_space_notes": "Adds policy conflict and negative-action trap (refund penalty).",
+        "typical_horizon": 3,
+        "stochasticity": "Low",
+        "expected_optimal_score": 0.99,
+    },
+    "task_hard_1": {
+        "difficulty": Difficulty.HARD.value,
+        "why_harder_than_previous": "Requires data fetch + correct escalation reason + customer communication.",
+        "state_space_notes": "More branching paths and larger failure surface due to ordering constraints.",
+        "typical_horizon": 3,
+        "stochasticity": "Medium",
+        "expected_optimal_score": 0.99,
+    },
+    "task_fraud_detection": {
+        "difficulty": Difficulty.HARD.value,
+        "why_harder_than_previous": "Introduces chargeback-history risk and high-value refund denial logic.",
+        "state_space_notes": "Adds fraud/risk state and denial behavior under customer pressure.",
+        "typical_horizon": 4,
+        "stochasticity": "Medium",
+        "expected_optimal_score": 0.99,
+    },
+}
+
 TASKS = {
     "task_easy_1": {
         "difficulty": Difficulty.EASY.value,
